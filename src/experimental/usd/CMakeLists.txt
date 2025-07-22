@@ -172,10 +172,11 @@ target_include_directories(${MJCF_PLUGIN_TARGET_NAME} PRIVATE
 
 add_library(${MJC_PHYSICS_PLUGIN_TARGET_NAME} SHARED)
 target_sources(${MJC_PHYSICS_PLUGIN_TARGET_NAME} PRIVATE
-  mjcPhysics/actuatorAPI.cpp
+  mjcPhysics/actuator.cpp
   mjcPhysics/collisionAPI.cpp
   mjcPhysics/jointAPI.cpp
   mjcPhysics/keyframe.cpp
+  mjcPhysics/materialAPI.cpp
   mjcPhysics/meshCollisionAPI.cpp
   mjcPhysics/sceneAPI.cpp
   mjcPhysics/siteAPI.cpp
@@ -199,10 +200,6 @@ target_sources(mujoco PRIVATE
   utils.cc
   writer.cc
 )
-target_include_directories(${MJ_USD_TARGET_NAME} PUBLIC
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../"
-)
-
 
 if (USD_DIR)
   find_package(pxr REQUIRED)

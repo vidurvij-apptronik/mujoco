@@ -96,14 +96,6 @@ void BinEdges(mjtNum* x_edges, mjtNum* y_edges, int size[2], mjtNum fov[2],
   mju_scl(y_edges, y_edges, fov[1]*mjPI / 180, size[1] + 1);
 }
 
-// Permute 3-vector from 0,1,2 to 2,0,1.
-static void xyz2zxy(mjtNum* x) {
-  mjtNum z = x[2];
-  x[2] = x[1];
-  x[1] = x[0];
-  x[0] = z;
-}
-
 // Transform spherical (azimuth, elevation, radius) to Cartesian (x,y,z).
 void SphericalToCartesian(const mjtNum aer[3], mjtNum xyz[3]) {
   mjtNum a = aer[0], e = aer[1], r = aer[2];
@@ -290,8 +282,8 @@ void TouchStress::Compute(const mjModel* m, mjData* d, int instance) {
   mjtNum* site_mat = d->site_xmat + 9*site_id;
 
   // Allocate contact forces and positions.
-  mjtNum* forces = mj_stackAllocNum(d, ncon*3);
   mjtNum* forcesT = mj_stackAllocNum(d, ncon*3);
+  mju_zero(forcesT, ncon*3);
 
   // Iterate over colliding geoms.
   for (auto geom : contact_geom_ids) {
@@ -304,13 +296,17 @@ void TouchStress::Compute(const mjModel* m, mjData* d, int instance) {
     if (m->geom_type[geom] == mjGEOM_SDF) {
       sdf_instance[0] = m->geom_plugin[geom];
       sdf_ptr[0] = mjc_getSDF(m, geom);
+    } else if (m->geom_type[geom] == mjGEOM_MESH) {
+      sdf_instance[0] = m->geom_dataid[geom];
+      geomtype[0] = (mjtGeom)m->geom_type[geom];
     } else {
       sdf_instance[0] = geom;
       geomtype[0] = (mjtGeom)m->geom_type[geom];
     }
 
-    // Skip mesh geoms.
-    if (geomtype[0] == mjGEOM_MESH) {
+    // Skip mesh geoms not having an octree.
+    if (geomtype[0] == mjGEOM_MESH &&
+        m->mesh_octadr[m->geom_dataid[geom]] == -1) {
       continue;
     }
 
@@ -345,9 +341,8 @@ void TouchStress::Compute(const mjModel* m, mjData* d, int instance) {
         mju_sub3(tmp, xpos, d->geom_xpos + 3*geom);
         mju_mulMatTVec3(lpos, d->geom_xmat + 9*geom, tmp);
 
-        // Add mesh position if needed.
-        if (m->geom_type[geom] == mjGEOM_MESH ||
-            m->geom_type[geom] == mjGEOM_SDF) {
+        // SDF plugins are in the original mesh frame.
+        if (sdf_ptr[0] != NULL) {
           mjtNum mesh_mat[9];
           mju_quat2Mat(mesh_mat, m->mesh_quat + 4 * m->geom_dataid[geom]);
           mju_mulMatVec3(lpos, mesh_mat, lpos);
@@ -357,7 +352,6 @@ void TouchStress::Compute(const mjModel* m, mjData* d, int instance) {
         // Compute distance.
         mjtNum depth = mju_min(mjc_distance(m, d, &geom_sdf, lpos), 0);
         if (depth == 0) {
-          mju_zero3(forces + 3*node);
           node++;
           continue;
         }
@@ -373,23 +367,20 @@ void TouchStress::Compute(const mjModel* m, mjData* d, int instance) {
         mju_sub3(vel_rel, vel_sensor+3, vel_other+3);
 
         // Get contact force/torque, rotate into node frame.
-        mjtNum tmp_force[3], normal[3];
+        mjtNum frc[3];
+        mjtNum normal[3];
         mjtNum kMaxDepth = 0.05;
         mjtNum pressure = 1 / (kMaxDepth - depth) - 1 / kMaxDepth;
         mjc_gradient(m, d, &sensor_sdf, normal, pos);
-        mju_scl3(tmp_force, normal, pressure);
-        mju_mulMatTVec3(forces + 3*node, mat, tmp_force);
-        forces[3*node+0] = mju_abs(mju_dot3(vel_rel, mat + 0));
-        forces[3*node+1] = mju_abs(mju_dot3(vel_rel, mat + 3));
+        mju_scl3(frc, normal, pressure);
 
-        // Permute forces from x,y,z to z,x,y (normal, tangent, tangent)
-        xyz2zxy(forces + 3*node);
+        // one row of mat^T * force
+        forcesT[0*ncon + node] = mat[2]*frc[0] + mat[5]*frc[1] + mat[8]*frc[2];
+        forcesT[1*ncon + node] = mju_abs(mju_dot3(vel_rel, mat + 0));
+        forcesT[2*ncon + node] = mju_abs(mju_dot3(vel_rel, mat + 3));
         node++;
       }
     }
-
-    // Transpose forces.
-    mju_transpose(forcesT, forces, ncon, 3);
 
     // Compute sensor output.
     for (int c = 0; c < nchannel_; c++) {
@@ -407,6 +398,9 @@ static const mjtNum kRelativeThickness = 0.02;
 
 void TouchStress::Visualize(const mjModel* m, mjData* d, const mjvOption* opt,
                              mjvScene* scn, int instance) {
+  if (!opt->flags[mjVIS_CONTACTPOINT]) {
+    return;
+  }
   mj_markStack(d);
 
   // Get sensor data.

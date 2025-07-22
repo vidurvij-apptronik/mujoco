@@ -222,6 +222,7 @@ struct mjCOctree_ {
   std::vector<int> child_;           // children of each node     (nnode x 8)
   std::vector<double> node_;         // bounding boxes            (nnode x 6)
   std::vector<int> level_;           // levels of each node       (nnode x 1)
+  std::vector<double> coeff_;        // interpo coefficients      (nnode x 8)
   std::vector<Triangle> face_;       // mesh faces                (nface x 3)
   double ipos_[3] = {0, 0, 0};
   double iquat_[4] = {1, 0, 0, 0};
@@ -246,6 +247,8 @@ class mjCOctree : public mjCOctree_ {
     level_.clear();
     face_.clear();
   }
+  void AddCoeff(double coeff) { coeff_.push_back(coeff); }
+  const std::vector<double>& Coeff() const { return coeff_; }
 
  private:
   void Make(std::vector<Triangle>& elements);
@@ -502,6 +505,10 @@ class mjCBody : public mjCBody_, private mjsBody {
   // getters
   std::vector<mjCBody*> Bodies() const { return bodies; }
 
+  // get list of a given type
+  template <class T>
+  const std::vector<T*>& GetList() const;
+
   // accumulate inertia of another body into this body, if `result` is not nullptr, the accumulated
   // inertia will be stored in `result`, otherwise the body's private spec will be used.
   void AccumulateInertia(const mjsBody* other, mjsBody* result = nullptr);
@@ -531,12 +538,6 @@ class mjCBody : public mjCBody_, private mjsBody {
   template <typename T>
   void CopyList(std::vector<T*>& dst, const std::vector<T*>& src,
                 std::map<mjCFrame*, int>& fmap, const mjCFrame* pframe = nullptr);
-
-  // gets next child of the same type in this body
-  template <class T>
-  mjsElement* GetNext(const std::vector<T*>& list, const mjsElement* child);
-
-  bool IsAncestor(const mjCBody* child) const;  // true if child is a descendant of this body
 };
 
 
@@ -1000,7 +1001,7 @@ class mjCMesh_ : public mjCBase {
   std::vector<int> spec_facetexcoord_;
 
   // used by the compiler
-  bool needoct_;                                 // needs octree
+  bool needreorient_;                            // needs reorientation
   bool visual_;                                  // true: the mesh is only visual
   std::vector< std::pair<int, int> > halfedge_;  // half-edge data
 

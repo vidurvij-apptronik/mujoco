@@ -2,24 +2,53 @@
 Changelog
 =========
 
-Version 3.3.4 (July 8, 2025)
+Upcoming version (not yet released)
 -----------------------------------
+
+General
+^^^^^^^
+- Added the :ref:`insidesite<sensor-insidesite>` sensor, for checking if an object is inside the volume of a site.
+  It is useful for triggering events in surrounding environment logic.
+- Added the :ref:`contact<sensor-contact>` sensor, for reporting contact information according to user-defined criteria.
+  The purpose of the :el:`contact` sensor is to report contact-related information in a fixed-size array. This is useful
+  as input to learning-based agents and in environment logic.
+- Removed the SdfLib plugin and the dependency on `SdfLib <https://github.com/UPC-ViRVIG/SdfLib>`__. SDFs are now
+  supported natively in mjModel.
+- Removed ``oct_depth`` from :ref:`mjvOption` (unused).
+- Inertia computation in MuJoCo C is now performed by a new :ref:`pipeline<piStages>` function :ref:`mj_makeM`, which
+  combines the Composite Rigid Body algorithm in :ref:`mj_crb` and additional terms related to
+  :ref:`tendon armature<tendon-spatial-armature>`. Code that uses :ref:`mj_crb` to compute the inertia should now use
+  :ref:`mj_makeM` instead.
+
+.. admonition:: Breaking API changes
+   :class: attention
+
+   - Removed the ``mjVIS_FLEXBVH`` enum value, its functionality is now provided by :ref:`mjVIS_MESHBVH<mjtVisFlag>`.
+
+Bug fixes
+^^^^^^^^^
+- Fixed a bug that caused object lists in the child to have missing elements after attaching an mjSpec. This was caused
+  by adding to the lists only the objects that belong to the tree of the requested body, but this causes to skip objects
+  that were attached, since they belong to the tree of the parent.
+
+Version 3.3.4 (July 8, 2025)
+----------------------------
 
 .. admonition:: Breaking API changes
    :class: attention
 
    1. The functions ``mjs_detachBody`` and ``mjs_detachDefault`` have been replaced by :ref:`mjs_delete`.
    2. The Python functions ``element.delete`` have been replaced by ``spec.delete(element)``.
+   3. In the mjSpec C API, directly setting an element's name using :ref:`mjs_setString` has been replaced with a new
+      function :ref:`mjs_setName` which allows checking for naming collisions at set-time rather than compile-time, for
+      earlier catching of errors. Relatedly, the ``name`` attribute has been removed from all mjs elements.
 
 General
 ^^^^^^^
-3. Added support for setting the initial camera in the viewer using
+4. Added support for setting the initial camera in the viewer using
    :ref:`visual/global/cameraid<visual-global-cameraid>`.
-4. Added support to only sync the state in the Python :ref:`passive viewer<PyViewerPassive>`'s ``Sync`` method, this is
+5. Added support to only sync the state in the Python :ref:`passive viewer<PyViewerPassive>`'s ``Sync`` method, this is
    useful to improve performance. The default behavior is unchanged and copies the entire model and data.
-5. In the mjSpec C API, directly setting an element's name using :ref:`mjs_setString` has been replaced with a new
-   function :ref:`mjs_setName` which allows checking for naming collisions at set-time rather than compile-time, for
-   earlier catching of errors.
 
 Bug fixes
 ^^^^^^^^^

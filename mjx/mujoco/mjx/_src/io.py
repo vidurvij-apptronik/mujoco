@@ -148,7 +148,7 @@ def _resolve_impl_and_device(
   elif (has_impl, has_device) == (False, True):
     impl = _resolve_impl(device)
   else:
-    device = jax.devices(jax.default_backend())[0]
+    device = jax.devices()[0]
     logging.info('Using JAX default device: %s.', device)
     impl = _resolve_impl(device)
 
@@ -227,6 +227,9 @@ def _put_model_jax(
     device: Optional[jax.Device] = None,
 ) -> types.Model:
   """Puts mujoco.MjModel onto a device, resulting in mjx.Model."""
+  if m.nflex:
+    raise NotImplementedError('Flex not implemented for JAX backend.')
+
   mesh_geomid = set()
   for g1, g2, ip in collision_driver.geom_pairs(m):
     t1, t2 = m.geom_type[[g1, g2]]

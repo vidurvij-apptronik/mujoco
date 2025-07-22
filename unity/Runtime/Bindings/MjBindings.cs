@@ -49,6 +49,7 @@ public const int mjNBIAS = 10;
 public const int mjNFLUID = 12;
 public const int mjNREF = 2;
 public const int mjNIMP = 5;
+public const int mjNSENS = 2;
 public const int mjNSOLVER = 200;
 public const int mjNISLAND = 20;
 public const bool THIRD_PARTY_MUJOCO_INCLUDE_MJPLUGIN_H_ = true;
@@ -110,7 +111,7 @@ public const int mjMAXLINEPNT = 1000;
 public const int mjMAXPLANEGRID = 200;
 public const bool THIRD_PARTY_MUJOCO_MJXMACRO_H_ = true;
 public const bool THIRD_PARTY_MUJOCO_MUJOCO_H_ = true;
-public const int mjVERSION_HEADER = 334;
+public const int mjVERSION_HEADER = 335;
 
 
 // ------------------------------------Enums------------------------------------
@@ -389,14 +390,16 @@ public enum mjtSensor : int{
   mjSENS_SUBTREECOM = 35,
   mjSENS_SUBTREELINVEL = 36,
   mjSENS_SUBTREEANGMOM = 37,
-  mjSENS_GEOMDIST = 38,
-  mjSENS_GEOMNORMAL = 39,
-  mjSENS_GEOMFROMTO = 40,
-  mjSENS_E_POTENTIAL = 41,
-  mjSENS_E_KINETIC = 42,
-  mjSENS_CLOCK = 43,
-  mjSENS_PLUGIN = 44,
-  mjSENS_USER = 45,
+  mjSENS_INSIDESITE = 38,
+  mjSENS_GEOMDIST = 39,
+  mjSENS_GEOMNORMAL = 40,
+  mjSENS_GEOMFROMTO = 41,
+  mjSENS_CONTACT = 42,
+  mjSENS_E_POTENTIAL = 43,
+  mjSENS_E_KINETIC = 44,
+  mjSENS_CLOCK = 45,
+  mjSENS_PLUGIN = 46,
+  mjSENS_USER = 47,
 }
 public enum mjtStage : int{
   mjSTAGE_NONE = 0,
@@ -409,6 +412,16 @@ public enum mjtDataType : int{
   mjDATATYPE_POSITIVE = 1,
   mjDATATYPE_AXIS = 2,
   mjDATATYPE_QUATERNION = 3,
+}
+public enum mjtConDataField : int{
+  mjCONDATA_FOUND = 0,
+  mjCONDATA_FORCE = 1,
+  mjCONDATA_TORQUE = 2,
+  mjCONDATA_DIST = 3,
+  mjCONDATA_POS = 4,
+  mjCONDATA_NORMAL = 5,
+  mjCONDATA_TANGENT = 6,
+  mjNCONDATA = 7,
 }
 public enum mjtSameFrame : int{
   mjSAMEFRAME_NONE = 0,
@@ -630,10 +643,9 @@ public enum mjtVisFlag : int{
   mjVIS_FLEXFACE = 26,
   mjVIS_FLEXSKIN = 27,
   mjVIS_BODYBVH = 28,
-  mjVIS_FLEXBVH = 29,
-  mjVIS_MESHBVH = 30,
-  mjVIS_SDFITER = 31,
-  mjNVISFLAG = 32,
+  mjVIS_MESHBVH = 29,
+  mjVIS_SDFITER = 30,
+  mjNVISFLAG = 31,
 }
 public enum mjtRndFlag : int{
   mjRND_SHADOW = 0,
@@ -5362,6 +5374,7 @@ public unsafe struct mjModel_ {
   public int* oct_depth;
   public int* oct_child;
   public double* oct_aabb;
+  public double* oct_coeff;
   public int* jnt_type;
   public int* jnt_qposadr;
   public int* jnt_dofadr;
@@ -5682,6 +5695,7 @@ public unsafe struct mjModel_ {
   public int* sensor_objid;
   public int* sensor_reftype;
   public int* sensor_refid;
+  public int* sensor_intprm;
   public int* sensor_dim;
   public int* sensor_adr;
   public double* sensor_cutoff;
@@ -6115,9 +6129,8 @@ public unsafe struct mjvOption_ {
   public fixed byte actuatorgroup[6];
   public fixed byte flexgroup[6];
   public fixed byte skingroup[6];
-  public fixed byte flags[32];
+  public fixed byte flags[31];
   public int bvh_depth;
-  public int oct_depth;
   public int flex_layer;
 }
 

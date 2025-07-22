@@ -1590,6 +1590,14 @@ STRUCTS: Mapping[str, StructDecl] = dict([
                  array_extent=('noct', 6),
              ),
              StructFieldDecl(
+                 name='oct_coeff',
+                 type=PointerType(
+                     inner_type=ValueType(name='mjtNum'),
+                 ),
+                 doc='octree interpolation coefficients',
+                 array_extent=('noct', 8),
+             ),
+             StructFieldDecl(
                  name='jnt_type',
                  type=PointerType(
                      inner_type=ValueType(name='int'),
@@ -4148,6 +4156,14 @@ STRUCTS: Mapping[str, StructDecl] = dict([
                  ),
                  doc='id of reference frame; -1: global frame',
                  array_extent=('nsensor',),
+             ),
+             StructFieldDecl(
+                 name='sensor_intprm',
+                 type=PointerType(
+                     inner_type=ValueType(name='int'),
+                 ),
+                 doc='sensor parameters',
+                 array_extent=('nsensor', 'mjNSENS'),
              ),
              StructFieldDecl(
                  name='sensor_dim',
@@ -6909,7 +6925,7 @@ STRUCTS: Mapping[str, StructDecl] = dict([
                  name='flags',
                  type=ArrayType(
                      inner_type=ValueType(name='mjtByte'),
-                     extents=(32,),
+                     extents=(31,),
                  ),
                  doc='visualization flags (indexed by mjtVisFlag)',
              ),
@@ -6917,11 +6933,6 @@ STRUCTS: Mapping[str, StructDecl] = dict([
                  name='bvh_depth',
                  type=ValueType(name='int'),
                  doc='depth of the bounding volume hierarchy to be visualized',
-             ),
-             StructFieldDecl(
-                 name='oct_depth',
-                 type=ValueType(name='int'),
-                 doc='depth of the octree to be visualized',
              ),
              StructFieldDecl(
                  name='flex_layer',
@@ -9373,6 +9384,11 @@ STRUCTS: Mapping[str, StructDecl] = dict([
                  doc='do not exclude large-angle faces from normals',
              ),
              StructFieldDecl(
+                 name='needsdf',
+                 type=ValueType(name='mjtByte'),
+                 doc='compute sdf from mesh',
+             ),
+             StructFieldDecl(
                  name='maxhullvert',
                  type=ValueType(name='int'),
                  doc='maximum vertex count for the convex hull',
@@ -10387,6 +10403,14 @@ STRUCTS: Mapping[str, StructDecl] = dict([
                      inner_type=ValueType(name='mjString'),
                  ),
                  doc='name of referenced object',
+             ),
+             StructFieldDecl(
+                 name='intprm',
+                 type=ArrayType(
+                     inner_type=ValueType(name='int'),
+                     extents=(2,),
+                 ),
+                 doc='integer parameters',
              ),
              StructFieldDecl(
                  name='datatype',

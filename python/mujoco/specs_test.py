@@ -98,9 +98,13 @@ class SpecsTest(absltest.TestCase):
     site = body.add_site()
     site.name = 'sitename'
     site.type = mujoco.mjtGeom.mjGEOM_BOX
-    site.userdata = [1, 2, 3, 4, 5, 6]
+    site.userdata = [7, 2, 3, 4, 5, 6]
     self.assertEqual(site.name, 'sitename')
     self.assertEqual(site.type, mujoco.mjtGeom.mjGEOM_BOX)
+    np.testing.assert_array_equal(site.userdata, [7, 2, 3, 4, 5, 6])
+
+    # Modify a single element of userdata.
+    site.userdata[0] = 1
     np.testing.assert_array_equal(site.userdata, [1, 2, 3, 4, 5, 6])
 
     # Compile the spec and check for expected values in the model.
@@ -1151,6 +1155,38 @@ class SpecsTest(absltest.TestCase):
     child4 = mujoco.MjSpec()
     with self.assertRaisesRegex(ValueError, 'Frame not found.'):
       parent.attach(child4, frame='invalid_frame', prefix='child3-')
+
+  def test_attach_valid_child_lists(self):
+    xml1 = """
+    <mujoco>
+      <worldbody>
+        <body name="b1">
+          <geom name="g1"/>
+          <joint name="j1" type="hinge"/>
+        </body>
+      </worldbody>
+    </mujoco>
+    """
+
+    xml2 = """
+    <mujoco>
+      <worldbody>
+        <body name="b2">
+          <geom name="g2"/>
+          <joint name="j2" type="hinge"/>
+        </body>
+      </worldbody>
+    </mujoco>
+    """
+
+    parent = mujoco.MjSpec.from_string(xml1)
+    child = mujoco.MjSpec.from_string(xml2)
+    self.assertLen(child.joints, 1)
+    self.assertLen(child.geoms, 1)
+    frame = parent.worldbody.add_frame()
+    parent.attach(child, prefix='', frame=frame)
+    self.assertLen(child.joints, 1)
+    self.assertLen(child.geoms, 1)
 
   def test_bind(self):
     spec = mujoco.MjSpec.from_string("""

@@ -394,6 +394,14 @@ void mjCModel::CopyPlugin(const std::vector<mjCPlugin*>& source,
       delete candidate;
     }
   }
+
+  // update other elements in the list in case of multiple references
+  for (auto& element : list) {
+    if (!element->plugin_instance_name.empty()) {
+      element->spec.plugin.element =
+          instances.at(element->plugin_instance_name)->spec.plugin.element;
+    }
+  }
 }
 
 
@@ -1689,7 +1697,7 @@ void mjCModel::IndexAssets(bool discard) {
           ((mjCMesh*)mesh)->SetNotVisual();  // reset to true by mesh->Compile()
         }
         geom->mesh = (discard && geom->visual_) ? nullptr : (mjCMesh*)mesh;
-        static_cast<mjCMesh*>(mesh)->needoct_ |= geom->spec.type == mjGEOM_SDF;
+        static_cast<mjCMesh*>(mesh)->spec.needsdf |= geom->spec.type == mjGEOM_SDF;
       } else {
         throw mjCError(geom, "mesh '%s' not found in geom %d", geom->get_meshname().c_str(), i);
       }
@@ -2997,6 +3005,11 @@ void mjCModel::CopyObjects(mjModel* m) {
       memcpy(m->oct_aabb + 6*oct_adr, pme->octree().Nodes().data(), 6*n_oct*sizeof(mjtNum));
       memcpy(m->oct_child + 8*oct_adr, pme->octree().Child().data(), 8*n_oct*sizeof(int));
       memcpy(m->oct_depth + oct_adr, pme->octree().Level().data(), n_oct*sizeof(int));
+      if (!pme->octree().Coeff().empty()) {
+        memcpy(m->oct_coeff + 8*oct_adr, pme->octree().Coeff().data(), 8*n_oct*sizeof(mjtNum));
+      } else {
+        mjuu_zerovec(m->oct_coeff + 8*oct_adr, 8*n_oct);
+      }
     }
 
     // advance counters
@@ -3454,6 +3467,7 @@ void mjCModel::CopyObjects(mjModel* m) {
     m->sensor_objid[i] = psen->obj ? psen->obj->id : -1;
     m->sensor_reftype[i] = psen->reftype;
     m->sensor_refid[i] = psen->ref ? psen->ref->id : -1;
+    mjuu_copyvec(m->sensor_intprm+i*mjNSENS, psen->intprm, mjNSENS);
     m->sensor_dim[i] = psen->dim;
     m->sensor_cutoff[i] = (mjtNum)psen->cutoff;
     m->sensor_noise[i] = (mjtNum)psen->noise;
